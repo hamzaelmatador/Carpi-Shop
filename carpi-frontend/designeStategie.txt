@@ -1,0 +1,61 @@
+# Design Strategy: Carpi Shop (Premium Dark Theme)
+
+This document outlines the design and styling strategy used in the Carpi Shop project to maintain consistency in future projects.
+
+## 1. Color Palette (Dark & Gold Theme)
+The project follows a "Premium Dark" aesthetic, using deep blacks and high-contrast gold accents.
+
+- **Backgrounds:**
+  - Main Background: `#0D0D0D` (Pure dark)
+  - Surface Dark: `#121212` (Cards and sections)
+  - Surface Light: `#1A1A1A` (Inputs and active elements)
+- **Accents:**
+  - Primary Gold: `#D4A017`
+  - Gold Gradient: `linear-gradient(135deg, #D4A017, #B8860B)`
+  - Muted Gold: `#8B6508`
+- **Text:**
+  - Primary: `#FFFFFF` (Pure white)
+  - Secondary/Muted: `#B3B3B3` (Gray)
+- **Borders:**
+  - Dark Border: `#2C2C2E`
+
+## 2. Typography
+- **Primary Font:** 'Inter' or 'Plus Jakarta Sans' (fallback: sans-serif).
+- **Headings:** Bold (700+), letter-spacing `0.02em` for a modern, clean look.
+- **Logo:** Heavy weight (900), gradient text-clip, negative letter-spacing (`-1px` to `-2px`) for a compact, brand-forward feel.
+
+## 3. Core UI Components & Styling Patterns
+
+### Cards & Grid
+- **Border Radius:** `12px` (Standard Card) / `30px` (Pills/Buttons).
+- **Hover Effects:**
+  - Subtle lift: `transform: translateY(-8px) scale(1.02)`.
+  - Border highlight: `border-color: var(--primary-gold)`.
+  - Deep shadows: `box-shadow: 0 12px 40px rgba(0,0,0,0.6)`.
+- **Media Aspect Ratio:** `aspect-ratio: 1` (square) for product thumbnails.
+
+### Navigation & Headers
+- **Sticky Headers:** Search and category bars remain fixed while scrolling content.
+- **Navbar Glassmorphism:** Uses `linear-gradient(180deg, rgba(0,0,0,0.7) 10%, transparent 100%)` initially, turning solid `#0D0D0D` on scroll.
+- **Bottom Navigation:** Mobile-friendly bottom bar for quick access.
+
+### Buttons & Inputs
+- **Pills:** Category buttons use `border-radius: 30px`.
+- **Inputs:** Search bars use `surface-light` background with subtle borders and inner icons.
+- **Welcome Buttons:** 
+  - Primary (Gold Gradient) for high-intent actions (Sign up).
+  - Secondary (Black with thin border) for low-intent (Login).
+
+## 4. Visual Effects
+- **Gradients:** Extensive use of gradients for overlays to ensure text readability over images.
+- **Glassmorphism:** Use of `backdrop-filter: blur(4px)` on tags and overlays.
+- **Transitions:** Smooth bezier transitions: `all 0.3s cubic-bezier(0.4, 0, 0.2, 1)`.
+
+## 5. Layout Strategy
+- **Mobile-First:** Responsive grids (`repeat(auto-fill, minmax(220px, 1fr))`) that collapse to 2 columns on mobile.
+- **Horizontal Scrolling:** Used for categories and promoted items to maximize vertical space.
+- **Standard Padding:** `4vw` for desktop, `24px` for mobile.
+
+## 6. Libraries Used
+- **Lucide React:** For consistent, thin-stroke iconography.
+- **Framer Motion:** For page transitions, `AnimatePresence` triggers, and entrance animations (`initial={{ opacity: 0 }}`).
