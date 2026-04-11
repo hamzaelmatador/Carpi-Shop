@@ -1,6 +1,28 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios";
 import { useNotify } from "../components/NotificationProvider";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// Fix default icon issue with Leaflet in React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+});
+
+function LocationMarker({ position }) {
+  const map = useMapEvents({});
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, map.getZoom());
+    }
+  }, [position, map]);
+
+  return position === null ? null : <Marker position={position} />;
+}
 
 export default function Profile() {
   const { notify } = useNotify();
@@ -13,6 +35,11 @@ export default function Profile() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [profilePicture, setProfilePicture] = useState("");
+  
+  // Location Info
+  const [coords, setCoords] = useState(null); // [lat, lng]
+  const [address, setAddress] = useState("");
+  const [isLocating, setIsLocating] = useState(false);
 
   // Security Info
   const [currentPassword, setCurrentPassword] = useState("");
@@ -28,6 +55,11 @@ export default function Profile() {
         setEmail(res.data.email);
         setProfilePicture(res.data.profilePicture || "");
         
+        if (res.data.location?.coordinates) {
+          setCoords([res.data.location.coordinates[1], res.data.location.coordinates[0]]);
+        }
+        setAddress(res.data.location?.address || "");
+        
         // Fetch transactions
         const transRes = await api.get(`/credits/transactions/${res.data._id}`);
         setTransactions(transRes.data);
@@ -39,6 +71,45 @@ export default function Profile() {
     };
     fetchProfile();
   }, [notify]);
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      notify("Geolocation is not supported by your browser", "error");
+      return;
+    }
+
+    setIsLocating(true);
+    notify("Detecting your physical location...", "success");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        setCoords([lat, lon]);
+
+        try {
+          // Reverse Geocoding using Nominatim (OpenStreetMap)
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`
+          );
+          const data = await response.json();
+          const displayAddress = data.display_name || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+          setAddress(displayAddress);
+          notify("Physical location verified! ✨");
+        } catch (err) {
+          setAddress(`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+          notify("Location set, but address details could not be fetched.", "warning");
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      () => {
+        setIsLocating(false);
+        notify("Unable to retrieve your physical location. Please enable GPS.", "error");
+      },
+      { enableHighAccuracy: true }
+    );
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -79,6 +150,11 @@ export default function Profile() {
         name,
         email,
         profilePicture,
+        location: coords ? {
+          type: 'Point',
+          coordinates: [coords[1], coords[0]], // [lng, lat] for GeoJSON
+          address
+        } : undefined,
         currentPassword: currentPassword || undefined,
         newPassword: newPassword || undefined
       });
@@ -150,6 +226,52 @@ export default function Profile() {
               <input type="text" className="form-input" value="ADMINISTRATOR" disabled style={{ color: '#FFC107', fontWeight: 800, border: '1px solid #FFC107' }} />
             </div>
           )}
+
+          <hr className="profile-divider" />
+
+          {/* LOCATION SECTION */}
+          <h3 className="sidebar-title" style={{ fontSize: '0.8rem', color: 'var(--primary-gold)' }}>Marketplace Location</h3>
+          <p className="auth-subtitle" style={{ textAlign: 'left', marginBottom: '1rem', color: '#ffc107', fontSize: '0.8rem' }}>
+            ⚠️ Location can only be set by your physical presence. Manual selection is disabled.
+          </p>
+          
+          <div className="form-group">
+            <label className="form-label">Verified Shop Address</label>
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="No location set yet" 
+              value={address} 
+              readOnly 
+              style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
+            />
+          </div>
+
+          <div className="location-section">
+            <button 
+              type="button" 
+              className="btn-secondary get-location-btn" 
+              onClick={handleGetLocation}
+              disabled={isLocating}
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              {isLocating ? "📡 Verifying Location..." : "📍 Sync Physical Shop Location"}
+            </button>
+            <div className="map-container-wrapper" style={{ pointerEvents: 'none' }}>
+              <MapContainer 
+                center={coords || [35.8256, 10.6084]} 
+                zoom={coords ? 15 : 6} 
+                style={{ height: '100%', width: '100%' }}
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                <LocationMarker position={coords} />
+              </MapContainer>
+            </div>
+            <p className="avatar-hint" style={{ marginTop: '8px' }}>The map automatically updates to show your verified shop location.</p>
+          </div>
 
           <hr className="profile-divider" />
 

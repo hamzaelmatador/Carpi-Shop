@@ -39,6 +39,21 @@ const userSchema = new mongoose.Schema(
       type: String, // Storing Base64 data directly
       default: '',
     },
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        index: '2dsphere',
+      },
+      address: {
+        type: String,
+        default: '',
+      },
+    },
   },
   {
     timestamps: true,

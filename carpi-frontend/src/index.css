@@ -1947,3 +1947,33 @@ select:focus {
     opacity: 1;
   }
 }
+
+/* Map Styles */
+.map-container-wrapper {
+  height: 300px;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-dark);
+  margin-top: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+
+.location-section {
+  margin-top: 2rem;
+}
+
+.get-location-btn {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+}

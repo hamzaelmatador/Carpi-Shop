@@ -44,6 +44,7 @@ export const signupUser = async (req, res, next) => {
         role: user.role,
         creditBalance: user.creditBalance,
         profilePicture: user.profilePicture,
+        location: user.location,
         token: generateToken(user._id, user.role),
       });
     } else {
@@ -78,6 +79,7 @@ export const loginUser = async (req, res, next) => {
         role: user.role,
         creditBalance: user.creditBalance,
         profilePicture: user.profilePicture,
+        location: user.location,
         token: generateToken(user._id, user.role),
       });
     } else {
@@ -104,6 +106,7 @@ export const getUserProfile = async (req, res, next) => {
         role: user.role,
         creditBalance: user.creditBalance,
         profilePicture: user.profilePicture,
+        location: user.location,
       });
     } else {
       res.status(404);

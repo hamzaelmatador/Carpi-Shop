@@ -32,6 +32,7 @@ export const updateUser = async (req, res, next) => {
       user.name = req.body.name || user.name;
       user.email = req.body.email || user.email;
       user.profilePicture = req.body.profilePicture || user.profilePicture;
+      user.location = req.body.location || user.location;
       
       // Admin only can change roles
       if (req.user.role === 'admin' && req.body.role) {
@@ -63,6 +64,7 @@ export const updateUser = async (req, res, next) => {
         email: updatedUser.email,
         role: updatedUser.role,
         profilePicture: updatedUser.profilePicture,
+        location: updatedUser.location,
       });
     } else {
       res.status(404);
