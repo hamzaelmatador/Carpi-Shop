@@ -39,6 +39,10 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    secretCode: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

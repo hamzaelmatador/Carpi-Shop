@@ -1,7 +1,7 @@
 // src/components/Navbar.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { PlusCircle, Home, Store, User, LogOut, Menu, X, Gavel } from "lucide-react";
+import { PlusCircle, Home, Store, User, LogOut, Menu, X, Gavel, Package } from "lucide-react";
 import api from "../api/axios";
 
 export default function Navbar() {
@@ -68,6 +68,9 @@ export default function Navbar() {
             </Link>
             <Link to="/offers" className="nav-link">
               Offers
+            </Link>
+            <Link to="/deals" className="nav-link">
+              Deals
             </Link>
             <Link to="/profile" className="nav-link">
               Profile
@@ -141,6 +144,9 @@ export default function Navbar() {
             </Link>
             <Link to="/offers" className="mobile-menu-link" onClick={closeMenu}>
               <span className="link-icon"><Gavel size={20} /></span> Negotiation Hub
+            </Link>
+            <Link to="/deals" className="mobile-menu-link" onClick={closeMenu}>
+              <span className="link-icon"><Package size={20} /></span> Active Deals
             </Link>
             <Link
               to="/profile"

@@ -2,7 +2,7 @@ import express from 'express';
 import { 
   payOrder, 
   confirmMeeting, 
-  completeOrder, 
+  completeDeal, 
   getOrderById, 
   getMyOrders 
 } from '../controllers/orderController.js';
@@ -23,6 +23,6 @@ router.route('/:id/confirm-meeting')
   .put(protect, confirmMeeting);
 
 router.route('/:id/complete')
-  .put(protect, completeOrder);
+  .put(protect, completeDeal);
 
 export default router;

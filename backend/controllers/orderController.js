@@ -24,12 +24,62 @@ export const payOrder = async (req, res, next) => {
     }
 
     // 2. Simulate moving to Escrow
+    // Generate a 6-digit secret code
+    const secretCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
     order.status = 'escrow';
+    order.secretCode = secretCode;
     const updatedOrder = await order.save();
 
     res.json({
       order: updatedOrder,
-      message: 'Payment simulated. Funds are now in Escrow.',
+      message: 'Payment simulated. Funds are now in Escrow. Share your secret code with the seller during the meeting.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Complete the deal and release funds from escrow (Handshake)
+// @route   PUT /api/orders/:id/complete
+// @access  Private (Seller only)
+export const completeDeal = async (req, res, next) => {
+  try {
+    const { secretCode } = req.body;
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      res.status(404);
+      throw new Error('Order not found');
+    }
+
+    // 1. Only the seller can complete the deal using the code
+    if (order.seller.toString() !== req.user._id.toString()) {
+      res.status(403);
+      throw new Error('Only the seller can complete the deal with the code');
+    }
+
+    if (order.status !== 'escrow' && order.status !== 'meeting') {
+      res.status(400);
+      throw new Error('Order must be in escrow or meeting status to complete');
+    }
+
+    // 2. Verify the secret code
+    if (order.secretCode !== secretCode) {
+      res.status(400);
+      throw new Error('Invalid secret code');
+    }
+
+    // 3. Move funds to seller (Simulated)
+    order.status = 'completed';
+    const updatedOrder = await order.save();
+
+    // Logic for updating seller's balance would go here
+    // For now, we simulate the success of the handshake
+    
+    res.json({
+      order: updatedOrder,
+      message: 'Deal completed successfully. Funds released!',
     });
   } catch (error) {
     next(error);
