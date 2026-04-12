@@ -21,7 +21,8 @@ export default function ProductDetails() {
   const [hasPendingOffer, setHasPendingOffer] = useState(false);
   const [pendingOffer, setPendingOffer] = useState(null);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
-  const [offerAmount, setOfferAmount] = useState("");
+  const [offerDiscount, setOfferDiscount] = useState(0);
+  const [maxDiscount, setMaxDiscount] = useState(25);
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
 
   const nextImage = (e) => {
@@ -52,16 +53,18 @@ export default function ProductDetails() {
 
   const handleMakeOffer = async (e) => {
     e.preventDefault();
-    if (!offerAmount || isNaN(offerAmount) || Number(offerAmount) <= 0) {
-      notify("Please enter a valid offer amount.", "error");
+    if (offerDiscount < 0 || offerDiscount > maxDiscount) {
+      notify("Invalid discount requested.", "error");
       return;
     }
+
+    const calculatedAmount = product.price * (1 - offerDiscount / 100);
 
     setIsSubmittingOffer(true);
     try {
       const res = await api.post("/offers", {
         productId: id,
-        amount: Number(offerAmount)
+        amount: calculatedAmount
       });
       notify("Offer submitted successfully! Wait for seller's response.");
       setHasPendingOffer(true);
@@ -79,7 +82,7 @@ export default function ProductDetails() {
       try {
         const productRes = await api.get(`/products/${id}`);
         setProduct(productRes.data);
-        setOfferAmount(productRes.data.price); // Default offer amount to current price
+        setOfferDiscount(0); // Default to no discount
         
         const token = localStorage.getItem("token");
         if (token) {
@@ -105,6 +108,13 @@ export default function ProductDetails() {
               const offerRes = await api.get(`/offers/check/${id}`);
               setHasPendingOffer(offerRes.data.hasPendingOffer);
               setPendingOffer(offerRes.data.offer);
+              
+              let currentMax = 25;
+              if (offerRes.data.highestOfferAmount) {
+                const bestDiscountPercentage = Math.floor(((productRes.data.price - offerRes.data.highestOfferAmount) / productRes.data.price) * 100);
+                currentMax = Math.max(0, bestDiscountPercentage - 1);
+              }
+              setMaxDiscount(currentMax);
             }
           } catch (e) {
             console.error("Token decoding failed", e);
@@ -261,20 +271,42 @@ export default function ProductDetails() {
             
             <form onSubmit={handleMakeOffer}>
               <div className="form-group" style={{ marginBottom: '24px', textAlign: 'left' }}>
-                <label className="form-label">Your Offer Amount ($)</label>
+                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Request Discount</span>
+                  <span style={{ color: 'var(--primary-gold)', fontWeight: 'bold' }}>{offerDiscount}%</span>
+                </label>
+                
                 <input 
-                  type="number" 
+                  type="range" 
                   className="form-input" 
-                  style={{ fontSize: '1.5rem', fontWeight: 800, textAlign: 'center', padding: '15px' }}
-                  value={offerAmount}
-                  onChange={(e) => setOfferAmount(e.target.value)}
-                  placeholder="Enter amount"
-                  required
-                  autoFocus
+                  min="0"
+                  max={maxDiscount}
+                  step="1"
+                  value={offerDiscount}
+                  onChange={(e) => setOfferDiscount(Number(e.target.value))}
+                  style={{ width: '100%', accentColor: 'var(--primary-gold)', padding: '0', height: 'auto', marginTop: '10px', cursor: 'grab' }}
                 />
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', textAlign: 'center' }}>
-                  Listed Price: ${product.price.toLocaleString()}
-                </p>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '5px' }}>
+                  <span>0%</span>
+                  <span>{maxDiscount}% Max</span>
+                </div>
+
+                <div style={{ marginTop: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '5px' }}>You will pay:</p>
+                  <p style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--primary-gold)', lineHeight: 1 }}>
+                    ${(product.price * (1 - offerDiscount / 100)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '10px' }}>
+                    Original Price: <span style={{ textDecoration: 'line-through' }}>${product.price.toLocaleString()}</span>
+                  </p>
+                </div>
+                
+                {maxDiscount < 25 && (
+                  <p style={{ fontSize: '0.8rem', color: '#ffbd4a', marginTop: '15px', background: 'rgba(255, 189, 74, 0.1)', padding: '10px', borderRadius: '6px', textAlign: 'center', border: '1px solid rgba(255, 189, 74, 0.2)' }}>
+                    Competitive Bidding: A previous offer restricts the maximum discount to <strong>{maxDiscount}%</strong>.
+                  </p>
+                )}
               </div>
 
               <div className="modal-actions">

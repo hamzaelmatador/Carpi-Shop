@@ -91,6 +91,29 @@ export const createOffer = async (req, res, next) => {
       throw new Error('You already have a pending offer for this product');
     }
 
+    // Evaluate against competitive bidding rules
+    // Find the current highest pending offer for this product
+    const highestOffer = await Offer.findOne({
+      product: productId,
+      status: 'pending',
+    }).sort({ amount: -1 });
+
+    let currentMaxDiscount = 25; // Base maximum discount is 25%
+
+    if (highestOffer) {
+      const bestOfferDiscountPercentage = Math.floor(((product.price - highestOffer.amount) / product.price) * 100);
+      // To beat the current highest offer, the new discount must be strictly smaller
+      currentMaxDiscount = Math.max(0, bestOfferDiscountPercentage - 1);
+    }
+
+    const minAmountAllowed = product.price * (1 - currentMaxDiscount / 100);
+
+    // We allow a small 0.001 tolerance for JS floating point drift when computing prices locally
+    if (amount < minAmountAllowed - 0.001) {
+      res.status(400);
+      throw new Error(`Discount cannot exceed ${currentMaxDiscount}% (Current highest offer dictates this limit)`);
+    }
+
     // 4. Create the offer
     const offer = new Offer({
       product: productId,
@@ -139,13 +162,24 @@ export const getMyOffers = async (req, res, next) => {
 export const checkPendingOffer = async (req, res, next) => {
   try {
     const { productId } = req.params;
+
+    // Find the highest pending offer globally for this product
+    const bestOffer = await Offer.findOne({
+      product: productId,
+      status: 'pending',
+    }).sort({ amount: -1 });
+
     const offer = await Offer.findOne({
       product: productId,
       buyer: req.user._id,
       status: 'pending',
     });
 
-    res.json({ hasPendingOffer: !!offer, offer });
+    res.json({ 
+      hasPendingOffer: !!offer, 
+      offer,
+      highestOfferAmount: bestOffer ? bestOffer.amount : null 
+    });
   } catch (error) {
     next(error);
   }
