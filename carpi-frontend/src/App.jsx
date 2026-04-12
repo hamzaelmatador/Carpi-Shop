@@ -9,6 +9,7 @@ import ProductDetails from "./pages/ProductDetails";
 import ManageStore from "./pages/ManageStore";
 import EditProduct from "./pages/EditProduct";
 import Profile from "./pages/Profile";
+import Offers from "./pages/Offers";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { NotificationProvider } from "./components/NotificationProvider";
 
@@ -75,6 +76,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/offers"
+              element={
+                <ProtectedRoute>
+                  <Offers />
                 </ProtectedRoute>
               }
             />

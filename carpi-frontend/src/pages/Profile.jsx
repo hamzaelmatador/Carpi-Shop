@@ -13,13 +13,13 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
 });
 
-function LocationMarker({ position }) {
-  const map = useMapEvents({});
-  useEffect(() => {
-    if (position) {
-      map.flyTo(position, map.getZoom());
-    }
-  }, [position, map]);
+function LocationMarker({ position, setPosition }) {
+  const map = useMapEvents({
+    click(e) {
+      setPosition([e.latlng.lat, e.latlng.lng]);
+      map.flyTo(e.latlng, map.getZoom());
+    },
+  });
 
   return position === null ? null : <Marker position={position} />;
 }
@@ -39,7 +39,6 @@ export default function Profile() {
   // Location Info
   const [coords, setCoords] = useState(null); // [lat, lng]
   const [address, setAddress] = useState("");
-  const [isLocating, setIsLocating] = useState(false);
 
   // Security Info
   const [currentPassword, setCurrentPassword] = useState("");
@@ -78,36 +77,14 @@ export default function Profile() {
       return;
     }
 
-    setIsLocating(true);
-    notify("Detecting your physical location...", "success");
-
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-        setCoords([lat, lon]);
-
-        try {
-          // Reverse Geocoding using Nominatim (OpenStreetMap)
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`
-          );
-          const data = await response.json();
-          const displayAddress = data.display_name || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-          setAddress(displayAddress);
-          notify("Physical location verified! ✨");
-        } catch (err) {
-          setAddress(`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
-          notify("Location set, but address details could not be fetched.", "warning");
-        } finally {
-          setIsLocating(false);
-        }
+      (position) => {
+        setCoords([position.coords.latitude, position.coords.longitude]);
+        notify("Location detected! ✨");
       },
       () => {
-        setIsLocating(false);
-        notify("Unable to retrieve your physical location. Please enable GPS.", "error");
-      },
-      { enableHighAccuracy: true }
+        notify("Unable to retrieve your location", "error");
+      }
     );
   };
 
@@ -231,46 +208,37 @@ export default function Profile() {
 
           {/* LOCATION SECTION */}
           <h3 className="sidebar-title" style={{ fontSize: '0.8rem', color: 'var(--primary-gold)' }}>Marketplace Location</h3>
-          <p className="auth-subtitle" style={{ textAlign: 'left', marginBottom: '1rem', color: '#ffc107', fontSize: '0.8rem' }}>
-            ⚠️ Location can only be set by your physical presence. Manual selection is disabled.
-          </p>
+          <p className="auth-subtitle" style={{ textAlign: 'left', marginBottom: '1rem' }}>Set your shop location so local buyers can find you.</p>
           
           <div className="form-group">
-            <label className="form-label">Verified Shop Address</label>
+            <label className="form-label">Shop Address / Area</label>
             <input 
               type="text" 
               className="form-input" 
-              placeholder="No location set yet" 
+              placeholder="e.g. Downtown Market, Street 5" 
               value={address} 
-              readOnly 
-              style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
+              onChange={(e) => setAddress(e.target.value)}
             />
           </div>
 
           <div className="location-section">
-            <button 
-              type="button" 
-              className="btn-secondary get-location-btn" 
-              onClick={handleGetLocation}
-              disabled={isLocating}
-              style={{ width: '100%', justifyContent: 'center' }}
-            >
-              {isLocating ? "📡 Verifying Location..." : "📍 Sync Physical Shop Location"}
+            <button type="button" className="btn-secondary get-location-btn" onClick={handleGetLocation}>
+              📍 Get My Current Location
             </button>
-            <div className="map-container-wrapper" style={{ pointerEvents: 'none' }}>
+            <div className="map-container-wrapper">
               <MapContainer 
-                center={coords || [35.8256, 10.6084]} 
-                zoom={coords ? 15 : 6} 
+                center={coords || [35.8256, 10.6084]} // Default to a neutral location (e.g. Sousse, Tunisia)
+                zoom={coords ? 13 : 6} 
                 style={{ height: '100%', width: '100%' }}
               >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
-                <LocationMarker position={coords} />
+                <LocationMarker position={coords} setPosition={setCoords} />
               </MapContainer>
             </div>
-            <p className="avatar-hint" style={{ marginTop: '8px' }}>The map automatically updates to show your verified shop location.</p>
+            <p className="avatar-hint" style={{ marginTop: '8px' }}>Click on the map to manually set your shop location.</p>
           </div>
 
           <hr className="profile-divider" />

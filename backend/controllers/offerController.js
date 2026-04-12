@@ -79,7 +79,19 @@ export const createOffer = async (req, res, next) => {
       throw new Error('You cannot make an offer on your own product');
     }
 
-    // 3. Create the offer
+    // 3. Prevent multiple pending offers for the same product
+    const existingOffer = await Offer.findOne({
+      product: productId,
+      buyer: req.user._id,
+      status: 'pending',
+    });
+
+    if (existingOffer) {
+      res.status(400);
+      throw new Error('You already have a pending offer for this product');
+    }
+
+    // 4. Create the offer
     const offer = new Offer({
       product: productId,
       buyer: req.user._id,
@@ -116,6 +128,24 @@ export const getMyOffers = async (req, res, next) => {
       .sort({ createdAt: -1 });
 
     res.json(offers);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Check if the logged-in user has a pending offer for a specific product
+// @route   GET /api/offers/check/:productId
+// @access  Private
+export const checkPendingOffer = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    const offer = await Offer.findOne({
+      product: productId,
+      buyer: req.user._id,
+      status: 'pending',
+    });
+
+    res.json({ hasPendingOffer: !!offer, offer });
   } catch (error) {
     next(error);
   }

@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useNotify } from "../components/NotificationProvider";
 import ConfirmModal from "../components/ConfirmModal";
-import { ChevronLeft, ChevronRight, Sparkles, Clock, Trash2, Edit3, ShieldAlert } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Clock, Trash2, Edit3, ShieldAlert, BadgeDollarSign, Gavel } from "lucide-react";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -16,6 +16,13 @@ export default function ProductDetails() {
   const [activeImage, setActiveImage] = useState(0);
   const [isOwner, setIsOwner] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Offer States
+  const [hasPendingOffer, setHasPendingOffer] = useState(false);
+  const [pendingOffer, setPendingOffer] = useState(null);
+  const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
+  const [offerAmount, setOfferAmount] = useState("");
+  const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
 
   const nextImage = (e) => {
     e.preventDefault();
@@ -43,11 +50,36 @@ export default function ProductDetails() {
     }
   };
 
+  const handleMakeOffer = async (e) => {
+    e.preventDefault();
+    if (!offerAmount || isNaN(offerAmount) || Number(offerAmount) <= 0) {
+      notify("Please enter a valid offer amount.", "error");
+      return;
+    }
+
+    setIsSubmittingOffer(true);
+    try {
+      const res = await api.post("/offers", {
+        productId: id,
+        amount: Number(offerAmount)
+      });
+      notify("Offer submitted successfully! Wait for seller's response.");
+      setHasPendingOffer(true);
+      setPendingOffer(res.data);
+      setIsOfferModalOpen(false);
+    } catch (err) {
+      notify(err.response?.data?.message || "Failed to submit offer.", "error");
+    } finally {
+      setIsSubmittingOffer(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductAndOffer = async () => {
       try {
-        const res = await api.get(`/products/${id}`);
-        setProduct(res.data);
+        const productRes = await api.get(`/products/${id}`);
+        setProduct(productRes.data);
+        setOfferAmount(productRes.data.price); // Default offer amount to current price
         
         const token = localStorage.getItem("token");
         if (token) {
@@ -65,20 +97,28 @@ export default function ProductDetails() {
               user.role = profileRes.data.role;
             }
 
-            setIsOwner(user.id === res.data.owner || user.role === 'admin');
+            const ownerStatus = user.id === productRes.data.owner || user.role === 'admin';
+            setIsOwner(ownerStatus);
+
+            // If not owner, check for pending offers
+            if (!ownerStatus) {
+              const offerRes = await api.get(`/offers/check/${id}`);
+              setHasPendingOffer(offerRes.data.hasPendingOffer);
+              setPendingOffer(offerRes.data.offer);
+            }
           } catch (e) {
             console.error("Token decoding failed", e);
           }
         }
       } catch (err) {
-        console.error("Error fetching product:", err);
+        console.error("Error fetching data:", err);
         setError("Product not found.");
-        notify("Could not fetch product details.", "error");
+        notify("Could not fetch details.", "error");
       } finally {
         setLoading(false);
       }
     };
-    fetchProduct();
+    fetchProductAndOffer();
   }, [id, notify]);
 
   if (loading) return <div className="container loading-state">Fetching product details...</div>;
@@ -171,12 +211,37 @@ export default function ProductDetails() {
                 <button onClick={() => setIsModalOpen(true)} className="btn-secondary details-tool-btn danger">Delete Listing</button>
               </div>
             ) : (
-              <button className="btn-primary details-cta-btn">Contact Premium Seller</button>
+              <div className="details-buyer-actions" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {hasPendingOffer ? (
+                  <div className="pending-offer-status" style={{ 
+                    padding: '20px', 
+                    background: 'rgba(212, 160, 23, 0.05)', 
+                    border: '1px solid var(--primary-gold)', 
+                    borderRadius: '12px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ color: 'var(--primary-gold)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '5px' }}>
+                      Offer Pending Response
+                    </div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 900 }}>${pendingOffer?.amount?.toLocaleString()}</div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '5px' }}>
+                      You cannot make another offer until this one is resolved.
+                    </p>
+                  </div>
+                ) : (
+                  <button onClick={() => setIsOfferModalOpen(true)} className="btn-primary details-cta-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                    <Gavel size={20} />
+                    Make a Premium Offer
+                  </button>
+                )}
+                <button className="btn-secondary details-cta-btn">Contact Premium Seller</button>
+              </div>
             )}
           </div>
         </div>
       </div>
 
+      {/* DELETE MODAL */}
       <ConfirmModal 
         isOpen={isModalOpen}
         title="Permanently Delete?"
@@ -185,6 +250,43 @@ export default function ProductDetails() {
         onCancel={() => setIsModalOpen(false)}
         icon={<ShieldAlert size={48} color="#ff4d4d" />}
       />
+
+      {/* OFFER MODAL */}
+      {isOfferModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsOfferModalOpen(false)}>
+          <div className="custom-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+            <span className="modal-icon"><BadgeDollarSign size={64} color="var(--primary-gold)" /></span>
+            <h2 className="modal-title">Make an Offer</h2>
+            <p className="modal-text">Proposed price for <strong>{product.title}</strong>. The seller will be notified immediately.</p>
+            
+            <form onSubmit={handleMakeOffer}>
+              <div className="form-group" style={{ marginBottom: '24px', textAlign: 'left' }}>
+                <label className="form-label">Your Offer Amount ($)</label>
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  style={{ fontSize: '1.5rem', fontWeight: 800, textAlign: 'center', padding: '15px' }}
+                  value={offerAmount}
+                  onChange={(e) => setOfferAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  required
+                  autoFocus
+                />
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', textAlign: 'center' }}>
+                  Listed Price: ${product.price.toLocaleString()}
+                </p>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary modal-btn" onClick={() => setIsOfferModalOpen(false)}>Cancel</button>
+                <button type="submit" className="btn-primary modal-btn" disabled={isSubmittingOffer}>
+                  {isSubmittingOffer ? "Submitting..." : "Send Offer"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
