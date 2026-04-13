@@ -63,18 +63,18 @@ export default function Offers() {
       </header>
 
       {/* TABS */}
-      <div className="category-list-modern" style={{ marginBottom: '40px', justifyContent: 'flex-start' }}>
+      <div className="category-list-modern offers-tabs">
         <button 
           className={`category-pill-modern ${activeTab === "received" ? "active" : ""}`}
           onClick={() => setActiveTab("received")}
         >
-          Received Offers ({offers.filter(o => o.seller._id === userId).length})
+          Received ({offers.filter(o => o.seller._id === userId).length})
         </button>
         <button 
           className={`category-pill-modern ${activeTab === "sent" ? "active" : ""}`}
           onClick={() => setActiveTab("sent")}
         >
-          Sent Offers ({offers.filter(o => o.buyer._id === userId).length})
+          Sent ({offers.filter(o => o.buyer._id === userId).length})
         </button>
       </div>
 
@@ -86,90 +86,64 @@ export default function Offers() {
           <Link to="/" className="btn-primary" style={{ display: 'inline-block', marginTop: '20px' }}>Marketplace</Link>
         </div>
       ) : (
-        <div className="offers-grid" style={{ display: 'grid', gap: '20px' }}>
+        <div className="offers-grid">
           {filteredOffers.map(off => (
-            <div key={off._id} className="card offer-card-modern" style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '120px 1fr auto', 
-              alignItems: 'center', 
-              padding: '20px', 
-              gap: '24px'
-            }}>
+            <div key={off._id} className="card offer-card-modern">
               {/* Product Thumbnail */}
-              <div className="offer-image-container" style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', background: '#1a1a1a' }}>
-                <img src={off.product?.images?.[0]} alt={off.product?.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div className="offer-image-container">
+                <img src={off.product?.images?.[0]} alt={off.product?.title} />
               </div>
 
               {/* Offer Info */}
               <div className="offer-main-info">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <div className="offer-header-tags">
                   <span className="product-category-pill">{off.product?.category}</span>
-                  <span className={`status-badge ${off.status}`} style={{ 
-                    fontSize: '0.6rem', 
-                    fontWeight: 800, 
-                    textTransform: 'uppercase',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    background: off.status === 'pending' ? 'rgba(255, 193, 7, 0.1)' : off.status === 'accepted' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-                    color: off.status === 'pending' ? '#FFC107' : off.status === 'accepted' ? '#4CAF50' : '#f44336'
-                  }}>
+                  <span className={`status-badge ${off.status}`}>
                     {off.status}
                   </span>
                 </div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '4px' }}>{off.product?.title}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '12px' }}>
+                <h3 className="offer-title">{off.product?.title}</h3>
+                <p className="offer-user-link">
                   {activeTab === 'received' ? `From: ${off.buyer?.name}` : `To Seller: ${off.seller?.name}`}
                 </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                  <div>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.5, display: 'block' }}>Market Price</span>
-                    <span style={{ fontWeight: 700 }}>${off.product?.price?.toLocaleString()}</span>
+                <div className="offer-price-comparison">
+                  <div className="price-box">
+                    <span className="price-label">Market</span>
+                    <span className="price-value">${off.product?.price?.toLocaleString()}</span>
                   </div>
-                  <ArrowRight size={16} style={{ opacity: 0.3 }} />
-                  <div>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--primary-gold)', display: 'block' }}>Offered Price</span>
-                    <span style={{ fontWeight: 900, color: 'var(--primary-gold)', fontSize: '1.2rem' }}>${off.amount?.toLocaleString()}</span>
+                  <ArrowRight size={16} className="price-arrow" />
+                  <div className="price-box highlight">
+                    <span className="price-label gold">Offered</span>
+                    <span className="price-value gold big">${off.amount?.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="offer-actions" style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '180px' }}>
+              <div className="offer-actions">
                 {activeTab === 'received' && off.status === 'pending' ? (
-                  <>
+                  <div className="action-buttons-group">
                     <button 
                       onClick={() => handleUpdateStatus(off._id, 'accepted')}
-                      className="btn-primary" 
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px' }}
+                      className="btn-primary flex-center action-btn"
                     >
-                      <Check size={18} /> Accept Offer
+                      <Check size={18} /> Accept
                     </button>
                     <button 
                       onClick={() => handleUpdateStatus(off._id, 'rejected')}
-                      className="btn-secondary" 
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', color: '#f44336', borderColor: 'rgba(244, 67, 54, 0.3)' }}
+                      className="btn-secondary flex-center action-btn reject-btn"
                     >
                       <X size={18} /> Decline
                     </button>
-                  </>
+                  </div>
                 ) : (
-                  <Link to={`/product/${off.product?._id}`} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px' }}>
+                  <Link to={`/product/${off.product?._id}`} className="btn-secondary flex-center full-width">
                     <ExternalLink size={18} /> View Product
                   </Link>
                 )}
                 
                 {off.status === 'accepted' && (
-                  <div style={{ 
-                    marginTop: '10px', 
-                    padding: '8px', 
-                    background: 'rgba(76, 175, 80, 0.1)', 
-                    color: '#4CAF50', 
-                    borderRadius: '8px',
-                    fontSize: '0.75rem',
-                    textAlign: 'center',
-                    fontWeight: 600,
-                    border: '1px solid rgba(76, 175, 80, 0.2)'
-                  }}>
+                  <div className="transaction-badge">
                     Transaction Initialized
                   </div>
                 )}
@@ -179,23 +153,124 @@ export default function Offers() {
         </div>
       )}
 
-      {/* Mobile view adjustments (simplified) */}
       <style>{`
+        .offers-tabs {
+          margin-bottom: 40px;
+          justify-content: flex-start;
+          gap: 10px;
+        }
+        .offers-grid {
+          display: grid;
+          gap: 20px;
+        }
+        .offer-card-modern {
+          display: grid; 
+          grid-template-columns: 120px 1fr auto; 
+          align-items: center; 
+          padding: 20px; 
+          gap: 24px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+        }
+        .offer-image-container {
+          width: 120px;
+          height: 120px;
+          border-radius: 12px;
+          overflow: hidden;
+          background: #1a1a1a;
+        }
+        .offer-image-container img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .offer-header-tags {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 8px;
+        }
+        .status-badge {
+          font-size: 0.6rem; 
+          font-weight: 800; 
+          text-transform: uppercase;
+          padding: 2px 8px;
+          border-radius: 4px;
+        }
+        .status-badge.pending { background: rgba(255, 193, 7, 0.1); color: #FFC107; }
+        .status-badge.accepted { background: rgba(76, 175, 80, 0.1); color: #4CAF50; }
+        .status-badge.rejected { background: rgba(244, 67, 54, 0.1); color: #f44336; }
+
+        .offer-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
+        .offer-user-link { color: var(--text-secondary); fontSize: 0.9rem; marginBottom: 12px; }
+        
+        .offer-price-comparison { display: flex; align-items: center; gap: 20px; }
+        .price-box { display: flex; flex-direction: column; }
+        .price-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; opacity: 0.5; }
+        .price-label.gold { color: var(--primary-gold); opacity: 1; }
+        .price-value { font-weight: 700; }
+        .price-value.gold { color: var(--primary-gold); }
+        .price-value.big { font-size: 1.2rem; font-weight: 900; }
+        .price-arrow { opacity: 0.3; }
+
+        .offer-actions { min-width: 180px; }
+        .action-buttons-group { display: flex; flexDirection: column; gap: 10px; }
+        .action-btn { width: 100%; padding: 10px; }
+        .reject-btn { color: #f44336; borderColor: rgba(244, 67, 54, 0.3); }
+        .flex-center { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .full-width { width: 100%; }
+
+        .transaction-badge {
+          margin-top: 10px; 
+          padding: 8px; 
+          background: rgba(76, 175, 80, 0.1); 
+          color: #4CAF50; 
+          borderRadius: 8px;
+          font-size: 0.75rem;
+          textAlign: center;
+          fontWeight: 600;
+          border: 1px solid rgba(76, 175, 80, 0.2);
+        }
+
         @media (max-width: 768px) {
+          .offers-tabs {
+            justify-content: center;
+          }
           .offer-card-modern {
             grid-template-columns: 1fr !important;
+            gap: 20px;
+            padding: 15px;
             text-align: center;
           }
           .offer-image-container {
             margin: 0 auto;
+            width: 100%;
+            height: 180px;
           }
-          .offer-main-info {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+          .offer-header-tags {
+            justify-content: center;
+          }
+          .offer-price-comparison {
+            justify-content: center;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 12px;
           }
           .offer-actions {
+            min-width: unset;
             width: 100%;
+          }
+          .action-buttons-group {
+            flex-direction: row;
+          }
+          .action-btn {
+            flex: 1;
+          }
+        }
+        @media (max-width: 480px) {
+          .action-buttons-group {
+            flex-direction: column;
           }
         }
       `}</style>

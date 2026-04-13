@@ -10,7 +10,7 @@ export const updateOfferStatus = async (req, res, next) => {
     const { status } = req.body; // 'accepted' or 'rejected'
     const offerId = req.params.id;
 
-    const offer = await Offer.findById(offerId);
+    const offer = await Offer.findById(offerId).populate('product');
     if (!offer) {
       res.status(404);
       throw new Error('Offer not found');
@@ -28,14 +28,20 @@ export const updateOfferStatus = async (req, res, next) => {
       throw new Error(`Offer is already ${offer.status}`);
     }
 
-    offer.status = status;
-
-    let order = null;
-    // 3. If accepted, create the Simulated Escrow Order
+    // 3. If accepting, ensure product is not already sold
     if (status === 'accepted') {
-      order = new Order({
+      const product = await Product.findById(offer.product._id);
+      if (product.isSold) {
+        res.status(400);
+        throw new Error('This product has already been sold');
+      }
+
+      offer.status = 'accepted';
+
+      // 4. Create the Simulated Escrow Order
+      const order = new Order({
         offer: offer._id,
-        product: offer.product,
+        product: offer.product._id,
         buyer: offer.buyer,
         seller: offer.seller,
         finalPrice: offer.amount,
@@ -45,15 +51,37 @@ export const updateOfferStatus = async (req, res, next) => {
 
       const savedOrder = await order.save();
       offer.order = savedOrder._id; // Link the order back to the offer
+
+      // 5. Mark product as sold
+      product.isSold = true;
+      await product.save();
+
+      // 6. Automatically reject ALL other pending offers for this product
+      await Offer.updateMany(
+        { 
+          product: offer.product._id, 
+          status: 'pending', 
+          _id: { $ne: offer._id } 
+        },
+        { status: 'rejected' }
+      );
+
+      const updatedOffer = await offer.save();
+
+      return res.json({
+        offer: updatedOffer,
+        order: savedOrder,
+        message: 'Offer accepted, product marked as sold, and other pending offers rejected.',
+      });
+    } else {
+      // If rejecting
+      offer.status = 'rejected';
+      const updatedOffer = await offer.save();
+      return res.json({
+        offer: updatedOffer,
+        message: 'Offer rejected',
+      });
     }
-
-    const updatedOffer = await offer.save();
-
-    res.json({
-      offer: updatedOffer,
-      order,
-      message: status === 'accepted' ? 'Offer accepted and order created' : 'Offer rejected',
-    });
   } catch (error) {
     next(error);
   }
@@ -73,7 +101,13 @@ export const createOffer = async (req, res, next) => {
       throw new Error('Product not found');
     }
 
-    // 2. Prevent owner from making an offer on their own product
+    // 2. Prevent making an offer if product is already sold
+    if (product.isSold) {
+      res.status(400);
+      throw new Error('This product is already sold');
+    }
+
+    // 3. Prevent owner from making an offer on their own product
     if (product.owner.toString() === req.user._id.toString()) {
       res.status(400);
       throw new Error('You cannot make an offer on your own product');
