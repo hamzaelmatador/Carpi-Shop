@@ -6,6 +6,8 @@ import { Server } from 'socket.io';
 import app from './app.js';
 import connectDB from './config/db.js';
 import Message from './models/Message.js';
+import Order from './models/Order.js';
+import Notification from './models/Notification.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -46,6 +48,21 @@ io.on('connection', (socket) => {
 
       // Broadcast to everyone in the room (including the sender for confirmation)
       io.to(order).emit('receiveMessage', newMessage);
+
+      // Create Notification for the other person in the order
+      const orderData = await Order.findById(order);
+      if (orderData) {
+        const recipientId = orderData.buyer.toString() === sender.toString() ? orderData.seller : orderData.buyer;
+        await Notification.create({
+          recipient: recipientId,
+          sender: sender,
+          type: 'message_new',
+          title: 'New Message',
+          message: content.length > 50 ? content.substring(0, 50) + '...' : content,
+          link: `/chat/${order}`,
+          relatedId: newMessage._id
+        });
+      }
       
     } catch (error) {
       console.error('Socket Error (sendMessage):', error.message);

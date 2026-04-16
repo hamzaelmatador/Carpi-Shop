@@ -1,10 +1,13 @@
 // src/components/Navbar.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { PlusCircle, Home, Store, User, LogOut, Menu, X, Gavel, Package } from "lucide-react";
+import { PlusCircle, Home, Store, User, LogOut, Menu, X, Gavel, Package, Bell } from "lucide-react";
 import api from "../api/axios";
+import { useNotificationBadge } from "./NotificationBadgeContext";
 
 export default function Navbar() {
+  const { notifications, unreadCount, markAllAsRead, markAsRead } = useNotificationBadge();
+  const [showNotifications, setShowNotifications] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [balance, setBalance] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -46,7 +49,19 @@ export default function Navbar() {
     navigate("/login");
   };
 
-  const closeMenu = () => setIsMenuOpen(false);
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    setShowNotifications(false);
+  };
+
+  const handleNotificationClick = (n) => {
+    markAsRead(n._id);
+    setShowNotifications(false);
+    if (n.link) navigate(n.link);
+  };
+
+  const hasOfferNotifs = notifications.some(n => !n.isRead && n.type.startsWith('offer'));
+  const hasDealNotifs = notifications.some(n => !n.isRead && (n.type === 'order_update' || n.type === 'message_new'));
 
   return (
     <>
@@ -66,11 +81,13 @@ export default function Navbar() {
             <Link to="/manage" className="nav-link">
               Store
             </Link>
-            <Link to="/offers" className="nav-link">
+            <Link to="/offers" className="nav-link relative">
               Offers
+              {hasOfferNotifs && <span className="notification-dot"></span>}
             </Link>
-            <Link to="/deals" className="nav-link">
+            <Link to="/deals" className="nav-link relative">
               Deals
+              {hasDealNotifs && <span className="notification-dot"></span>}
             </Link>
             <Link to="/profile" className="nav-link">
               Profile
@@ -78,6 +95,39 @@ export default function Navbar() {
             <Link to="/create" className="nav-link">
               Create
             </Link>
+            
+            {/* Notification Bell */}
+            <div className="nav-link relative" style={{ cursor: 'pointer' }} onClick={() => setShowNotifications(!showNotifications)}>
+              <Bell size={20} />
+              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+              
+              {showNotifications && (
+                <div className="notification-dropdown">
+                  <div className="notification-header">
+                    <span>Notifications</span>
+                    <button onClick={(e) => { e.stopPropagation(); markAllAsRead(); }}>Mark all read</button>
+                  </div>
+                  <div className="notification-list">
+                    {notifications.length === 0 ? (
+                      <div className="notification-empty">No notifications</div>
+                    ) : (
+                      notifications.map(n => (
+                        <div 
+                          key={n._id} 
+                          className={`notification-item ${n.isRead ? 'read' : 'unread'}`}
+                          onClick={(e) => { e.stopPropagation(); handleNotificationClick(n); }}
+                        >
+                          <div className="notification-item-title">{n.title}</div>
+                          <div className="notification-item-message">{n.message}</div>
+                          <div className="notification-item-time">{new Date(n.createdAt).toLocaleDateString()}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div
               className="nav-link"
               style={{
@@ -100,7 +150,12 @@ export default function Navbar() {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             <div className="hamburger-icon-wrapper">
-              {isMenuOpen ? <X size={28} color="var(--primary-gold)" /> : <Menu size={28} color="var(--primary-gold)" />}
+              {isMenuOpen ? <X size={28} color="var(--primary-gold)" /> : (
+                <div className="relative">
+                  <Menu size={28} color="var(--primary-gold)" />
+                  {unreadCount > 0 && <span className="notification-dot-mobile"></span>}
+                </div>
+              )}
             </div>
           </button>
         </div>
@@ -142,11 +197,13 @@ export default function Navbar() {
             <Link to="/manage" className="mobile-menu-link" onClick={closeMenu}>
               <span className="link-icon"><Store size={20} /></span> My Store
             </Link>
-            <Link to="/offers" className="mobile-menu-link" onClick={closeMenu}>
+            <Link to="/offers" className="mobile-menu-link relative" onClick={closeMenu}>
               <span className="link-icon"><Gavel size={20} /></span> Negotiation Hub
+              {hasOfferNotifs && <span className="notification-dot-menu"></span>}
             </Link>
-            <Link to="/deals" className="mobile-menu-link" onClick={closeMenu}>
+            <Link to="/deals" className="mobile-menu-link relative" onClick={closeMenu}>
               <span className="link-icon"><Package size={20} /></span> Active Deals
+              {hasDealNotifs && <span className="notification-dot-menu"></span>}
             </Link>
             <Link
               to="/profile"

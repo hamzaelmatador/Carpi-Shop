@@ -150,6 +150,7 @@ const Dashboard = ({ user, onLogout }) => {
             onClick={() => setActiveTab('overview')}
           >
             Overview
+            {unreadCount > 0 && <span className="notification-dot"></span>}
           </div>
           <div 
             className={`sidebar-item ${activeTab === 'users' ? 'active' : ''}`}
@@ -185,9 +186,43 @@ const Dashboard = ({ user, onLogout }) => {
             {activeTab === 'products' && 'Products Management'}
             {activeTab === 'credits' && 'Credit Management'}
           </div>
-          <div className="user-profile">
-            <span className="user-name">{user.name}</span>
-            <span className="badge badge-admin">{user.role}</span>
+          <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            {/* Notification Bell */}
+            <div className="notification-bell-container" style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setShowNotifications(!showNotifications)}>
+              <span style={{ fontSize: '1.2rem' }}>🔔</span>
+              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+              
+              {showNotifications && (
+                <div className="notification-dropdown">
+                  <div className="notification-header">
+                    <span>Admin Notifications</span>
+                    <button onClick={(e) => { e.stopPropagation(); markAllAsRead(); }}>Mark all read</button>
+                  </div>
+                  <div className="notification-list">
+                    {notifications.length === 0 ? (
+                      <div className="notification-empty">No system alerts</div>
+                    ) : (
+                      notifications.map(n => (
+                        <div 
+                          key={n._id} 
+                          className={`notification-item ${n.isRead ? 'read' : 'unread'}`}
+                          onClick={(e) => { e.stopPropagation(); handleNotificationClick(n); }}
+                        >
+                          <div className="notification-item-title">{n.title}</div>
+                          <div className="notification-item-message">{n.message}</div>
+                          <div className="notification-item-time">{new Date(n.createdAt).toLocaleDateString()}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="user-profile">
+              <span className="user-name">{user.name}</span>
+              <span className="badge badge-admin">{user.role}</span>
+            </div>
           </div>
         </header>
 

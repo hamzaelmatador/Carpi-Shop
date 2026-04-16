@@ -1,6 +1,7 @@
 import Offer from '../models/Offer.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
+import Notification from '../models/Notification.js';
 
 // @desc    Update offer status (Accept/Reject)
 // @route   PUT /api/offers/:id/status
@@ -57,6 +58,12 @@ export const updateOfferStatus = async (req, res, next) => {
       await product.save();
 
       // 6. Automatically reject ALL other pending offers for this product
+      const otherOffers = await Offer.find({ 
+        product: offer.product._id, 
+        status: 'pending', 
+        _id: { $ne: offer._id } 
+      });
+
       await Offer.updateMany(
         { 
           product: offer.product._id, 
@@ -66,7 +73,30 @@ export const updateOfferStatus = async (req, res, next) => {
         { status: 'rejected' }
       );
 
+      // Notify other buyers their offers were rejected because item sold
+      for (const otherOffer of otherOffers) {
+        await Notification.create({
+          recipient: otherOffer.buyer,
+          type: 'offer_rejected',
+          title: 'Offer Rejected',
+          message: `Your offer for "${offer.product.title}" was rejected because it was sold to someone else.`,
+          link: '/offers',
+          relatedId: otherOffer._id
+        });
+      }
+
       const updatedOffer = await offer.save();
+
+      // Notify accepted buyer
+      await Notification.create({
+        recipient: offer.buyer,
+        sender: req.user._id,
+        type: 'offer_accepted',
+        title: 'Offer Accepted! 🎉',
+        message: `Your offer for "${offer.product.title}" has been accepted. View details in Active Deals.`,
+        link: '/deals',
+        relatedId: updatedOffer._id
+      });
 
       return res.json({
         offer: updatedOffer,
@@ -77,6 +107,18 @@ export const updateOfferStatus = async (req, res, next) => {
       // If rejecting
       offer.status = 'rejected';
       const updatedOffer = await offer.save();
+
+      // Notify rejected buyer
+      await Notification.create({
+        recipient: offer.buyer,
+        sender: req.user._id,
+        type: 'offer_rejected',
+        title: 'Offer Rejected',
+        message: `Your offer for "${offer.product.title}" was rejected by the seller.`,
+        link: '/offers',
+        relatedId: updatedOffer._id
+      });
+
       return res.json({
         offer: updatedOffer,
         message: 'Offer rejected',
@@ -164,6 +206,17 @@ export const createOffer = async (req, res, next) => {
       .populate('product', 'title price images')
       .populate('buyer', 'name email')
       .populate('seller', 'name email');
+
+    // Notify the seller
+    await Notification.create({
+      recipient: product.owner,
+      sender: req.user._id,
+      type: 'offer_new',
+      title: 'New Offer Received!',
+      message: `${req.user.name} made an offer of $${amount} for "${product.title}"`,
+      link: '/offers',
+      relatedId: createdOffer._id
+    });
 
     res.status(201).json(populatedOffer);
   } catch (error) {

@@ -14,6 +14,7 @@ import Orders from "./pages/Orders";
 import Chat from "./pages/Chat";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { NotificationProvider } from "./components/NotificationProvider";
+import { NotificationBadgeProvider } from "./components/NotificationBadgeContext";
 
 function App() {
   const location = useLocation();
@@ -25,90 +26,92 @@ function App() {
   }, [location]);
 
   return (
-    <NotificationProvider>
-      <div className={isAuthenticated ? "app-with-nav" : "app-no-nav"}>
-        {isAuthenticated && <Navbar />}
+    <NotificationBadgeProvider>
+      <NotificationProvider>
+        <div className={isAuthenticated ? "app-with-nav" : "app-no-nav"}>
+          {isAuthenticated && <Navbar />}
 
-        <main>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route
-              path="/create"
-              element={
-                <ProtectedRoute>
-                  <CreateProduct />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/manage"
-              element={
-                <ProtectedRoute>
-                  <ManageStore />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/product/:id"
-              element={
-                <ProtectedRoute>
-                  <ProductDetails />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/edit/:id"
-              element={
-                <ProtectedRoute>
-                  <EditProduct />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/offers"
-              element={
-                <ProtectedRoute>
-                  <Offers />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/deals"
-              element={
-                <ProtectedRoute>
-                  <Orders />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/chat/:orderId"
-              element={
-                <ProtectedRoute>
-                  <Chat />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </main>
-      </div>
-    </NotificationProvider>
+          <main>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Home />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route
+                path="/create"
+                element={
+                  <ProtectedRoute>
+                    <CreateProduct />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/manage"
+                element={
+                  <ProtectedRoute>
+                    <ManageStore />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/product/:id"
+                element={
+                  <ProtectedRoute>
+                    <ProductDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/edit/:id"
+                element={
+                  <ProtectedRoute>
+                    <EditProduct />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/offers"
+                element={
+                  <ProtectedRoute>
+                    <Offers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/deals"
+                element={
+                  <ProtectedRoute>
+                    <Orders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chat/:orderId"
+                element={
+                  <ProtectedRoute>
+                    <Chat />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </main>
+        </div>
+      </NotificationProvider>
+    </NotificationBadgeProvider>
   );
 }
 

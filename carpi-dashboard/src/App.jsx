@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Login from "./components/Login.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import axiosInstance from "./api/axiosInstance";
+import { NotificationBadgeProvider } from "./components/NotificationBadgeContext";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -49,7 +50,7 @@ function App() {
   }
 
   return (
-    <>
+    <NotificationBadgeProvider>
       <div className="app-container">
         {isAuthenticated && user ? (
           <Dashboard user={user} onLogout={handleLogout} />
@@ -60,7 +61,7 @@ function App() {
           </div>
         )}
       </div>
-    </>
+    </NotificationBadgeProvider>
   );
 }
 

@@ -10,6 +10,7 @@ import toolRoutes from './routes/toolRoutes.js';
 import offerRoutes from './routes/offerRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api/tools', toolRoutes);
 app.use('/api/offers', offerRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/chats', chatRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error Handling Middleware
 app.use(notFound);

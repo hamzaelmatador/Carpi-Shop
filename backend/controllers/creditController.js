@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import CreditTransaction from '../models/CreditTransaction.js';
+import Notification from '../models/Notification.js';
 
 // @desc    Add credits to a user balance
 // @route   POST /api/credits/admin/add
@@ -29,6 +30,15 @@ export const addCredits = async (req, res, next) => {
       amount: Number(amount),
       type,
       description: description || 'Credits added by admin',
+    });
+
+    // Notify user
+    await Notification.create({
+      recipient: userId,
+      type: 'credit_update',
+      title: 'Credits Added! 💰',
+      message: `Your balance has been topped up with ${amount} credits.`,
+      link: '/profile'
     });
 
     res.status(200).json({
@@ -74,6 +84,15 @@ export const deductCredits = async (req, res, next) => {
       amount: -Number(amount),
       type,
       description: description || 'Credits deducted by admin',
+    });
+
+    // Notify user
+    await Notification.create({
+      recipient: userId,
+      type: 'credit_update',
+      title: 'Credits Deducted',
+      message: `${amount} credits have been deducted from your balance.`,
+      link: '/profile'
     });
 
     res.status(200).json({

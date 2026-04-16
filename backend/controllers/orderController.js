@@ -1,4 +1,5 @@
 import Order from '../models/Order.js';
+import Notification from '../models/Notification.js';
 
 // @desc    Simulate payment for an order (Move to Escrow)
 // @route   PUT /api/orders/:id/pay
@@ -30,6 +31,17 @@ export const payOrder = async (req, res, next) => {
     order.status = 'escrow';
     order.secretCode = secretCode;
     const updatedOrder = await order.save();
+
+    // Notify the seller that payment is in escrow
+    await Notification.create({
+      recipient: order.seller,
+      sender: req.user._id,
+      type: 'order_update',
+      title: 'Payment Received (Escrow)',
+      message: 'The buyer has paid. Funds are in escrow. You can now arrange the meeting.',
+      link: `/chat/${order._id}`,
+      relatedId: order._id
+    });
 
     res.json({
       order: updatedOrder,
@@ -74,8 +86,16 @@ export const completeDeal = async (req, res, next) => {
     order.status = 'completed';
     const updatedOrder = await order.save();
 
-    // Logic for updating seller's balance would go here
-    // For now, we simulate the success of the handshake
+    // Notify the buyer that the deal is completed
+    await Notification.create({
+      recipient: order.buyer,
+      sender: req.user._id,
+      type: 'order_update',
+      title: 'Deal Completed! 🤝',
+      message: 'The seller has verified the code. The transaction is complete.',
+      link: `/deals`,
+      relatedId: order._id
+    });
     
     res.json({
       order: updatedOrder,
@@ -109,6 +129,18 @@ export const confirmMeeting = async (req, res, next) => {
 
     order.status = 'meeting';
     const updatedOrder = await order.save();
+
+    // Notify the other party
+    const recipientId = isBuyer ? order.seller : order.buyer;
+    await Notification.create({
+      recipient: recipientId,
+      sender: req.user._id,
+      type: 'order_update',
+      title: 'Meeting Confirmed',
+      message: `${req.user.name} confirmed they are ready for the meeting.`,
+      link: `/chat/${order._id}`,
+      relatedId: order._id
+    });
 
     res.json({
       order: updatedOrder,
@@ -144,6 +176,17 @@ export const completeOrder = async (req, res, next) => {
 
     order.status = 'completed';
     const updatedOrder = await order.save();
+
+    // Notify the seller
+    await Notification.create({
+      recipient: order.seller,
+      sender: req.user._id,
+      type: 'order_update',
+      title: 'Funds Released! 💰',
+      message: 'The buyer has released the funds. Transaction completed.',
+      link: `/deals`,
+      relatedId: order._id
+    });
 
     res.json({
       order: updatedOrder,
