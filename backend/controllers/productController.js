@@ -98,13 +98,18 @@ export const createProduct = async (req, res, next) => {
 // @desc    Get all products
 export const getProducts = async (req, res, next) => {
   try {
-    const { search, category } = req.query;
+    const { search, category, showSold } = req.query;
     const limit = parseInt(req.query.limit) || 12;
     const skip = parseInt(req.query.skip) || 0;
 
     let query = {};
     if (search) query.title = { $regex: search, $options: 'i' };
     if (category && category !== 'All') query.category = category;
+    
+    // Hide sold products by default unless showSold is true
+    if (showSold !== 'true') {
+      query.isSold = false;
+    }
 
     const products = await Product.find(query)
       .populate('user', 'name email profilePicture')

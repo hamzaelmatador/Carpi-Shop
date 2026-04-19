@@ -28,7 +28,7 @@ const Dashboard = ({ user, onLogout }) => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axiosInstance.get('/products');
+      const res = await axiosInstance.get('/products?showSold=true');
       setProducts(res.data.products || []);
     } catch (err) {
       console.error("Failed to fetch products", err);

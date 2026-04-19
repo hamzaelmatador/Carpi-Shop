@@ -2037,29 +2037,31 @@ select:focus {
   top: 100%;
   right: 0;
   width: 300px;
-  background: white;
+  background: var(--bg-surface-dark);
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
   margin-top: 15px;
   z-index: 1000;
   overflow: hidden;
-  color: #333;
+  color: var(--text-primary);
+  border: 1px solid var(--border-dark);
 }
 
 .notification-header {
   padding: 12px 16px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-dark);
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-weight: bold;
   font-size: 0.9rem;
+  background: var(--bg-surface-light);
 }
 
 .notification-header button {
   background: none;
   border: none;
-  color: #d4a017;
+  color: var(--primary-gold);
   font-size: 0.8rem;
   cursor: pointer;
 }
@@ -2071,40 +2073,42 @@ select:focus {
 
 .notification-item {
   padding: 12px 16px;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid var(--border-dark);
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .notification-item:hover {
-  background: #f9f9f9;
+  background: var(--bg-surface-light);
 }
 
 .notification-item.unread {
-  background: #fff9e6;
+  background: rgba(212, 160, 23, 0.05);
 }
 
 .notification-item-title {
   font-weight: bold;
   font-size: 0.85rem;
   margin-bottom: 4px;
+  color: var(--primary-gold);
 }
 
 .notification-item-message {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.4;
 }
 
 .notification-item-time {
   font-size: 0.7rem;
-  color: #999;
+  color: var(--text-secondary);
   margin-top: 6px;
+  opacity: 0.8;
 }
 
 .notification-empty {
   padding: 20px;
   text-align: center;
-  color: #999;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }

@@ -26,7 +26,7 @@ export default function ManageStore() {
 
   const fetchUserProducts = async () => {
     try {
-      const res = await api.get("/products?limit=1000"); 
+      const res = await api.get("/products?limit=1000&showSold=true"); 
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Not authenticated");
       
